@@ -25,3 +25,7 @@ Me siga nas redes sociais: https://about.me/luiztools
 
 Receba as novidades no Telegram: https://t.me/luiznews
 
+## Fork
+
+### Links úteis:
+[Documentação da API BingX](https://bingx.com/en-us/account/api/)
