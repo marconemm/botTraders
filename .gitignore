@@ -1,3 +1,6 @@
+# Personal ignore
+package-lock.json
+
 # Logs
 logs
 *.log
