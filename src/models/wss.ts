@@ -1,12 +1,7 @@
-interface TradeData {
-    E: number;
-    T: number;
-    e: string;
-    m: boolean;
-    p: string;
-    q: string;
-    s: string;
-    t: string;
+export interface TradeData {
+    price: number;
+    symbol: string;
+    quantity: string;
 }
 
 export interface Subscription {
@@ -22,7 +17,16 @@ export interface PingResponse {
 
 export interface TradeResponse {
     code: number;
-    data: TradeData;
+    data: {
+        E: number;
+        T: number;
+        e: string;
+        m: boolean;
+        p: string;
+        q: string;
+        s: string;
+        t: string;
+    };
     dataType: string;
     success: boolean;
 }

@@ -3,9 +3,10 @@ require("dotenv").config();
 import WebSocket from "ws";
 import { randomUUID } from "crypto";
 import { PingResponse, Subscription, TradeResponse } from "../models/wss";
-import { Enums } from "../models/enums";
+import { Enums } from "../utils/enums";
 import { BingXBot } from "../models/bots";
 
+const bingXBot = new BingXBot();
 const ws = new WebSocket(process.env.STREAM_URL || "");
 const textDecoder = new TextDecoder(Enums.UTF_8);
 const subscription: Subscription = {
@@ -46,8 +47,6 @@ const decodeResponse = async (err: Error, buffer: BufferSource | undefined) => {
 		console.log(`Sent a Pong to WSS for Ping "${response.ping}"`);
 
 	} else {
-		const bingXBot = new BingXBot();
-
 		bingXBot.evaluateTradeResponse(response);
 	}
 };
