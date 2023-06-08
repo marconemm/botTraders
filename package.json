@@ -1,12 +1,11 @@
 {
   "name": "binance-spot",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Bots to evaluate the market data and make trade operations.",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start:bing": "nodemon src/botBingX.ts",
-    "start_binance": "node src/index.js"
+    "conn:bing": "nodemon src/connections/bingX.ts",
+    "conn:binance": "node src/index.js"
   },
   "keywords": [],
   "author": "",

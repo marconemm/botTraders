@@ -2,10 +2,9 @@ require("dotenv").config();
 
 import WebSocket from "ws";
 import { randomUUID } from "crypto";
-import { PingResponse, Subscription, TradeResponse } from "./models/wss";
-import { Enums } from "./models/enums";
-
-import zlib from "zlib";
+import { PingResponse, Subscription, TradeResponse } from "../models/wss";
+import { Enums } from "../models/enums";
+import { BingXBot } from "../models/bots";
 
 const ws = new WebSocket(process.env.STREAM_URL || "");
 const textDecoder = new TextDecoder(Enums.UTF_8);
@@ -29,6 +28,8 @@ ws.onopen = event => {
 };
 
 ws.onmessage = async (event: WebSocket.MessageEvent) => {
+	const zlib = require("zlib");
+
 	zlib.gunzip(event.data, decodeResponse);
 };
 
@@ -42,9 +43,11 @@ const decodeResponse = async (err: Error, buffer: BufferSource | undefined) => {
 
 		ws.pong(JSON.stringify({ pong: response.ping, time: response.time }));
 		console.clear();
-		console.log("Ponging to WSS for ID: " + response.ping);
+		console.log(`Sent a Pong to WSS for Ping "${response.ping}"`);
 
 	} else {
-		console.log(response);
+		const bingXBot = new BingXBot();
+
+		bingXBot.evaluateTradeResponse(response);
 	}
 };

@@ -4,6 +4,6 @@
     ],
     "ext": "ts",
     "execMap": {
-        "ts": "sucrase-node src/botBingX.ts"
+        "ts": "sucrase-node src/connections/bingX.ts"
     }
 }
