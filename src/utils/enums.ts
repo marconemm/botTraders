@@ -2,7 +2,21 @@ export enum Enums {
     SUB = "sub",
     UNSUBSCRIBE = "unsub",
     BTC_USDT_TRADE = "BTC-USDT@trade",
-    UTF_8 = "utf-8",
+    ETH_USDT_TRADE = "ETH-USDT@trade",
+    UTF_8 = "utf-8"
+}
+
+export enum Side {
     BUY = "BUY",
-    SELL = "SELL"
+    SELL = "SELL",
+}
+
+export enum Type {
+    MARKET = "MARKET",
+    LIMIT = "LIMIT"
+}
+
+export enum RestMethod {
+    GET = "GET",
+    POST = "POST"
 }
