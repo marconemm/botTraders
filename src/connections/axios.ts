@@ -30,6 +30,6 @@ export class AxiosRequest {
             .then(res => {
                 return res.data
             })
-            .catch((error: Error) => console.log(error));
+            .catch((error: Error) => console.error(error));
     }
 }

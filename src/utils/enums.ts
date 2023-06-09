@@ -3,7 +3,8 @@ export enum Enums {
     UNSUBSCRIBE = "unsub",
     BTC_USDT_TRADE = "BTC-USDT@trade",
     ETH_USDT_TRADE = "ETH-USDT@trade",
-    UTF_8 = "utf-8"
+    UTF_8 = "utf-8",
+    CASH_FILENAME = "local-cash.json"
 }
 
 export enum Side {

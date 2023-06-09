@@ -1,40 +1,54 @@
 import { AxiosRequest } from "../connections/axios";
-import { Side, Type } from "../utils/enums";
+import { IOFile } from "../utils/IOFile";
+import { Enums, Side, Type } from "../utils/enums";
 import { INewOrderPayloadBingX, TradeData, TradeResponse } from "./wss";
 import CryptoJS from "crypto-js";
 
 export class BingXBot {
-    private readonly type: Type
-    private readonly endpoint: string
+    private readonly ioFile: IOFile;
+    private readonly cashedData: any;
+    private readonly type: Type;
+    private readonly endpoint: string;
 
     private hasOrder: boolean
 
     constructor(type: Type, endPoint: string) {
-        this.hasOrder = false;
+        this.ioFile = new IOFile(Enums.CASH_FILENAME, Enums.UTF_8);
+        this.cashedData = this.ioFile.readFile();
         this.type = type;
         this.endpoint = endPoint;
+        this.hasOrder = this.cashedData?.hasOrder || false;
     }
 
     evaluateTradeResponse(response: TradeResponse) {
         const data: TradeData = {
             symbol: response.data?.s,
             price: parseFloat(response.data?.p),
-            quantity: 0.001
+            quantity: this.cashedData?.quantity || 0.00000100
         }
 
         if (data.symbol)
             console.log(`\nPar: ${data.symbol}\nPreço: ${data.price}`);
 
         if (!this.hasOrder && data.price <= 26600) {
-            if (this.type == Type.MARKET) { this.newMarketOrder(Side.BUY, data); }
-            else { this.newLimitOrder(Side.BUY, data); }
-
             this.hasOrder = true;
+
+            if (this.type == Type.MARKET) {
+                this.newMarketOrder(Side.BUY, data);
+            }
+            else {
+                this.newLimitOrder(Side.BUY, data);
+            }
         }
         else if (this.hasOrder && data.price > 26700) {
-            if (this.type == Type.MARKET) { this.newMarketOrder(Side.SELL, data); }
-            else { this.newLimitOrder(Side.SELL, data); }
             this.hasOrder = false;
+
+            if (this.type == Type.MARKET) {
+                this.newMarketOrder(Side.SELL, data);
+            }
+            else {
+                this.newLimitOrder(Side.SELL, data);
+            }
         }
     }
 
@@ -59,6 +73,13 @@ export class BingXBot {
         }
 
         const uri = this.getURI(newOrderPayload)
+        const dataToCash: any = { ...newOrderPayload, ...data, hasOrder: this.hasOrder };
+
+        delete dataToCash.recvWindow;
+        dataToCash.quoteOrderQty = parseFloat(
+            (((dataToCash.price * dataToCash.quantity) * 0.99) - 0.005).toFixed(2)
+        ); // cashes 99% of the order placed value minus 1 penny.
+        this.ioFile.createFile(dataToCash);
 
         const axiosRequest = new AxiosRequest(uri);
         this.log(data, side, await axiosRequest.post())
@@ -78,8 +99,20 @@ export class BingXBot {
         console.log(`Preço: USD ${data.price}`);
         console.log(`Quantidade: ${data.quantity}`);
 
-        console.log("__\nResultado:");
-        console.log(response);
+        if (response) {
+            console.log("__\nResultado:");
+            console.log(response);
+
+            if (!response.success) {
+                this.hasOrder = false;
+                this.ioFile.updateFile({ hasOrder: this.hasOrder });
+            }
+
+        } else {
+            this.hasOrder = false;
+            this.ioFile.updateFile({ hasOrder: this.hasOrder });
+        }
+
         console.log("=== *** ===\n");
     }
 
