@@ -4,11 +4,12 @@ import { Enums, Side, Type } from "../utils/enums";
 import { INewOrderPayloadBingX, TradeData, TradeResponse } from "./wss";
 import CryptoJS from "crypto-js";
 
-export class BingXBot {
+class BingXBot {
     private readonly ioFile: IOFile;
     private readonly cashedData: any;
     private readonly type: Type;
     private readonly endpoint: string;
+    private readonly axiosRequest: AxiosRequest;
 
     private hasOrder: boolean
 
@@ -18,13 +19,14 @@ export class BingXBot {
         this.type = type;
         this.endpoint = endPoint;
         this.hasOrder = this.cashedData?.hasOrder || false;
+        this.axiosRequest = new AxiosRequest({ 'X-BX-APIKEY': process.env.API_KEY || "" });
     }
 
     async evaluateTradeResponse(response: TradeResponse) {
         const data: TradeData = {
             symbol: response.data?.s,
             price: parseFloat(response.data?.p),
-            quantity: this.cashedData?.quantity || 0.00000100
+            quantity: this.cashedData?.quantity || 0.00001000
         }
 
         if (data.symbol)
@@ -61,8 +63,8 @@ export class BingXBot {
         ); // cashes 99% of the order placed value minus 1 penny.
         this.ioFile.createFile(dataToCash);
 
-        const axiosRequest = new AxiosRequest(uri);
-        this.log(data, side, await axiosRequest.post())
+        this.axiosRequest.setURI(uri);
+        this.log(data, side, await this.axiosRequest.post())
     }
 
     private log(data: TradeData, type: Side, response: any) {
@@ -111,3 +113,31 @@ export class BingXBot {
         return `${process.env.API_URL}${this.endpoint}?${parameters.toString()}`;
     }
 }
+
+class BinanceTrendBot {
+    private readonly axiosRequest: AxiosRequest;
+    private currPriceResistance: number;
+    private currPriceSupport: number;
+
+    constructor(symbol: string, interval: string, limit?: number) {
+        if (limit && limit < 1)
+            throw new Error("The minimum value to the limit is 1.");
+
+        if (limit && limit > 1000)
+            throw new Error("The maximum value to the limit is 1000.");
+
+        let uri = `https://api4.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}`
+        uri += limit ? `&limit=${limit}` : "";
+
+        this.axiosRequest = new AxiosRequest();
+        this.axiosRequest.setURI(uri)
+    }
+
+    async test() {
+        this.axiosRequest.get().then(response => {
+            console.log(response);
+        });
+    }
+}
+
+export { BingXBot, BinanceTrendBot }

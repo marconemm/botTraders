@@ -1,9 +1,14 @@
 {
+    "verbose": false,
+    "ignore": [
+        "*.spec.js",
+        "**/fixtures/**"
+    ],
     "watch": [
-        "src"
+        "src/connections/"
     ],
     "ext": "ts",
     "execMap": {
-        "ts": "sucrase-node src/connections/bingX.ts"
+        "ts": "sucrase-node "
     }
 }

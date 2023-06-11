@@ -37,6 +37,7 @@ ws.onmessage = async (event: WebSocket.MessageEvent) => {
 
 ws.onclose = () => {
 	console.log("Encerrada a conexão com o WSS.");
+	process.exit();
 }
 
 const decodeResponse = async (err: Error, buffer: BufferSource | undefined) => {
@@ -47,7 +48,7 @@ const decodeResponse = async (err: Error, buffer: BufferSource | undefined) => {
 	if ("ping" in response) {
 		pingTimeout.refresh();
 		console.clear();
-		ws.pong(JSON.stringify({ ping: response.ping, time: response.time }));
+		ws.pong(JSON.stringify({ pong: response.ping, time: response.time }));
 		console.log(`Sent a Pong to WSS for Ping "${response.ping}"`);
 
 	} else {

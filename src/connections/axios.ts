@@ -1,13 +1,18 @@
 import axios from "axios";
 import { RestMethod } from "../utils/enums";
 
-export class AxiosRequest {
-    private readonly uri: string;
+class AxiosRequest {
+    private readonly headers: any;
     private readonly timeout: number;
+    private uri: string;
 
-    constructor(uri: string, timeout?: number) {
-        this.uri = uri;
+    constructor(headers?: { "X-BX-APIKEY": string }, timeout?: number) {
         this.timeout = timeout || 60000 * 1.5
+        this.headers = headers;
+    }
+
+    setURI(uri: string) {
+        this.uri = uri;
     }
 
     async get() {
@@ -22,9 +27,7 @@ export class AxiosRequest {
         return await axios({
             method: method,
             url: this.uri,
-            headers: {
-                'X-BX-APIKEY': process.env.API_KEY || ""
-            },
+            headers: this.headers,
             timeout: this.timeout
         })
             .then(res => {
@@ -33,3 +36,5 @@ export class AxiosRequest {
             .catch((error: Error) => console.error(error));
     }
 }
+
+export { AxiosRequest }

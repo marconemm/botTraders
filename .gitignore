@@ -1,6 +1,7 @@
 # Personal ignore
 package-lock.json
 *-cash.json
+.vscode/
 
 # Logs
 logs
