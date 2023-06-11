@@ -20,7 +20,7 @@ export class BingXBot {
         this.hasOrder = this.cashedData?.hasOrder || false;
     }
 
-    evaluateTradeResponse(response: TradeResponse) {
+    async evaluateTradeResponse(response: TradeResponse) {
         const data: TradeData = {
             symbol: response.data?.s,
             price: parseFloat(response.data?.p),
@@ -32,34 +32,14 @@ export class BingXBot {
 
         if (!this.hasOrder && data.price <= 26600) {
             this.hasOrder = true;
+            await this.newOrder(Side.BUY, this.type, data);
 
-            if (this.type == Type.MARKET) {
-                this.newMarketOrder(Side.BUY, data);
-            }
-            else {
-                this.newLimitOrder(Side.BUY, data);
-            }
         }
         else if (this.hasOrder && data.price > 26700) {
             this.hasOrder = false;
-
-            if (this.type == Type.MARKET) {
-                this.newMarketOrder(Side.SELL, data);
-            }
-            else {
-                this.newLimitOrder(Side.SELL, data);
-            }
+            await this.newOrder(Side.SELL, this.type, data);
         }
     }
-
-    private newMarketOrder = async (side: Side, data: TradeData) => {
-        await this.newOrder(side, Type.MARKET, data)
-    }
-
-    private newLimitOrder = async (side: Side, data: TradeData) => {
-        await this.newOrder(side, Type.LIMIT, data)
-    }
-
 
     private newOrder = async (side: Side, type: Type, data: TradeData) => {
         const newOrderPayload: INewOrderPayloadBingX = {

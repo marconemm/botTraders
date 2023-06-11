@@ -14,6 +14,9 @@ const subscription: Subscription = {
 	reqType: Enums.SUB,
 	dataType: Enums.BTC_USDT_TRADE, // or other according with the BingX API documentation.
 };
+const pingTimeout: NodeJS.Timeout = setTimeout(() => {
+	ws.terminate();
+}, 31000);
 
 ws.onopen = event => {
 	const { target } = event;
@@ -32,19 +35,22 @@ ws.onmessage = async (event: WebSocket.MessageEvent) => {
 	zlib.gunzip(event.data, decodeResponse);
 };
 
+ws.onclose = () => {
+	console.log("Encerrada a conexão com o WSS.");
+}
+
 const decodeResponse = async (err: Error, buffer: BufferSource | undefined) => {
 	if (err) throw (err);
 
-	let response: PingResponse | TradeResponse = JSON.parse(textDecoder.decode(buffer));
+	const response: PingResponse | TradeResponse = JSON.parse(textDecoder.decode(buffer));
 
 	if ("ping" in response) {
-		response = { ...response } as PingResponse;
-
-		ws.pong(JSON.stringify({ pong: response.ping, time: response.time }));
+		pingTimeout.refresh();
 		console.clear();
+		ws.pong(JSON.stringify({ ping: response.ping, time: response.time }));
 		console.log(`Sent a Pong to WSS for Ping "${response.ping}"`);
 
 	} else {
-		bingXBot.evaluateTradeResponse(response);
+		await bingXBot.evaluateTradeResponse(response);
 	}
 };
