@@ -3,6 +3,7 @@ import { IOFile } from "../utils/IOFile";
 import { Enums, Side, Type } from "../utils/enums";
 import { INewOrderPayloadBingX, ITradeData, ITradeResponse } from "../interfaces/interfaces";
 import CryptoJS from "crypto-js";
+import { BinanceTrendBot } from "./BinanceTrendBot";
 
 class BingXBot {
     private readonly ioFile: IOFile;
@@ -10,16 +11,21 @@ class BingXBot {
     private readonly type: Type;
     private readonly endpoint: string;
     private readonly axiosRequest: AxiosRequest;
+    private readonly tBotBinanceBTCUSDT: BinanceTrendBot;
 
     private hasOrder: boolean
 
     constructor(type: Type, endPoint: string) {
+        const interval = ((60 / 5) * 24) * 1;
+
         this.ioFile = new IOFile(Enums.CASH_FILENAME, Enums.UTF_8);
         this.cashedData = this.ioFile.readFile();
         this.type = type;
         this.endpoint = endPoint;
         this.hasOrder = this.cashedData?.hasOrder || false;
         this.axiosRequest = new AxiosRequest({ 'X-BX-APIKEY': process.env.API_KEY || "" });
+        this.tBotBinanceBTCUSDT = new BinanceTrendBot("BTCUSDT", "5m", interval);
+        this.tBotBinanceBTCUSDT.fetchData();
     }
 
     async evaluateTradeResponse(response: ITradeResponse) {
@@ -29,8 +35,11 @@ class BingXBot {
             quantity: this.cashedData?.quantity || 0.00001000
         }
 
-        if (data.symbol)
-            console.log(`\nPar: ${data.symbol}\nPreço: ${data.price}`);
+        if (data.symbol) {
+            console.log(`\nPar: ${data.symbol}\nPreço atual: ${data.price}`);
+            console.log(`Resistência: ${await this.tBotBinanceBTCUSDT.getCurrResistance()}`);
+            console.log(`Suporte: ${await this.tBotBinanceBTCUSDT.getCurrSupport()}`);
+        }
 
         if (!this.hasOrder && data.price <= 26600) {
             this.hasOrder = true;

@@ -11,6 +11,8 @@ class BinanceTrendBot {
     private lowestPrice: number;
     private highestPrice: number;
     private medianPrice: number;
+    private currResistance: number;
+    private currSupport: number;
 
     constructor(symbol: string, interval: string, limit?: number) {
         if (limit && limit < 1)
@@ -43,6 +45,20 @@ class BinanceTrendBot {
         console.log("Klines data updated.");
 
         this.log();
+    }
+
+    async getCurrResistance(): Promise<number> {
+        if (!this.currResistance)
+            await this.getCurrResistance();
+
+        return this.currResistance;
+    }
+
+    async getCurrSupport(): Promise<number> {
+        if (!this.currSupport)
+            await this.getCurrSupport();
+
+        return this.currSupport;
     }
 
     private async log() {
@@ -154,6 +170,7 @@ class BinanceTrendBot {
         const resistance: IPriceTrend = this.getTrendTick(filteredHighKlines.length);
 
         resistance.price = parseFloat((resistance.price * 0.9995).toFixed(2));
+        this.currResistance = resistance.price;
 
         return resistance;
     }
@@ -176,6 +193,7 @@ class BinanceTrendBot {
         const support: IPriceTrend = this.getTrendTick(filteredLowKlines.length);
 
         support.price = parseFloat((support.price * 0.9995).toFixed(2));
+        this.currSupport = support.price;
 
         return support;
     }
