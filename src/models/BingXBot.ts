@@ -1,7 +1,7 @@
 import { AxiosRequest } from "../connections/axios";
 import { IOFile } from "../utils/IOFile";
 import { Enums, Side, Type } from "../utils/enums";
-import { INewOrderPayloadBingX, TradeData, TradeResponse } from "../interfaces/interfaces";
+import { INewOrderPayloadBingX, ITradeData, ITradeResponse } from "../interfaces/interfaces";
 import CryptoJS from "crypto-js";
 
 class BingXBot {
@@ -22,8 +22,8 @@ class BingXBot {
         this.axiosRequest = new AxiosRequest({ 'X-BX-APIKEY': process.env.API_KEY || "" });
     }
 
-    async evaluateTradeResponse(response: TradeResponse) {
-        const data: TradeData = {
+    async evaluateTradeResponse(response: ITradeResponse) {
+        const data: ITradeData = {
             symbol: response.data?.s,
             price: parseFloat(response.data?.p),
             quantity: this.cashedData?.quantity || 0.00001000
@@ -43,7 +43,7 @@ class BingXBot {
         }
     }
 
-    private newOrder = async (side: Side, type: Type, data: TradeData) => {
+    private newOrder = async (side: Side, type: Type, data: ITradeData) => {
         const newOrderPayload: INewOrderPayloadBingX = {
             symbol: data.symbol,
             side: side,
@@ -67,7 +67,7 @@ class BingXBot {
         this.log(data, side, await this.axiosRequest.post())
     }
 
-    private log(data: TradeData, type: Side, response: any) {
+    private log(data: ITradeData, type: Side, response: any) {
         console.log("\n*** === ***");
 
         if (type == Side.BUY) {

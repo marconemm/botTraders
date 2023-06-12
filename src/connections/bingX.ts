@@ -2,14 +2,14 @@ require("dotenv").config();
 
 import WebSocket from "ws";
 import { randomUUID } from "crypto";
-import { PingResponse, Subscription, TradeResponse } from "../interfaces/interfaces";
+import { IPingResponse, ISubscription, ITradeResponse } from "../interfaces/interfaces";
 import { Enums, Type } from "../utils/enums";
 import { BingXBot } from "../models/BingXBot";
 
 const bingXBot = new BingXBot(Type.MARKET, "/openApi/swap/v2/trade/order");
 const ws = new WebSocket(process.env.STREAM_URL || "");
 const textDecoder = new TextDecoder(Enums.UTF_8);
-const subscription: Subscription = {
+const subscription: ISubscription = {
 	id: randomUUID(),
 	reqType: Enums.SUB,
 	dataType: Enums.BTC_USDT_TRADE, // or other according with the BingX API documentation.
@@ -43,7 +43,7 @@ ws.onclose = () => {
 const decodeResponse = async (err: Error, buffer: BufferSource | undefined) => {
 	if (err) throw (err);
 
-	const response: PingResponse | TradeResponse = JSON.parse(textDecoder.decode(buffer));
+	const response: IPingResponse | ITradeResponse = JSON.parse(textDecoder.decode(buffer));
 
 	if ("ping" in response) {
 		pingTimeout.refresh();

@@ -1,22 +1,22 @@
-export interface TradeData {
+export interface ITradeData {
     price: number;
     symbol: string;
     quantity?: number;
     quoteOrderQty?: number;
 }
 
-export interface Subscription {
+export interface ISubscription {
     id: string,
     reqType: string,
     dataType: string
 }
 
-export interface PingResponse {
+export interface IPingResponse {
     ping: string;
     time: string;
 }
 
-export interface TradeResponse {
+export interface ITradeResponse {
     code: number;
     data: {
         E: number;
@@ -41,4 +41,10 @@ export interface INewOrderPayloadBingX {
     quoteOrderQty?: number; // Quote order quantity, e.g., 100USDT
     price?: number; // Price, e.g., 10000USDT
     recvWindow?: number; // Request valid time window value, Unit: milliseconds
+}
+
+export interface IPriceTrend {
+    price: number;
+    count: number;
+    total: number
 }

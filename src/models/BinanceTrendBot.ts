@@ -1,9 +1,11 @@
 import { AxiosRequest } from "../connections/axios";
+import { IPriceTrend } from "../interfaces/interfaces";
 import { Kline } from "./Kline";
 
 class BinanceTrendBot {
     private readonly axiosRequest: AxiosRequest;
     private readonly TICK_SIZE: number;
+    private readonly SYMBOL: string;
     private groupedPrices: {}
     private klinesList: Kline[];
     private lowestPrice: number;
@@ -22,6 +24,7 @@ class BinanceTrendBot {
 
         this.axiosRequest = new AxiosRequest();
         this.TICK_SIZE = 0.01;
+        this.SYMBOL = symbol;
         this.groupedPrices = new Object();
         this.axiosRequest.setURI(uri)
         this.klinesList = new Array<Kline>;
@@ -43,13 +46,17 @@ class BinanceTrendBot {
     }
 
     private async log() {
-        console.log("\n--- *** ---");
+        const separator = "---------------------------------------------------";
+
+        console.log(`\n${separator}`);
+        console.log(`Trend Bot (${this.SYMBOL}), log:`);
+        console.log(separator);
         console.log("Máxima:", await this.getHighestPrice());
         console.log("Média:", await this.getMedianPrice());
         console.log("Mínima:", await this.getLowestPrice());
         console.log("Resistência:", await this.getPriceResistance());
         console.log("Suporte:", await this.getPriceSupport());
-        console.log("*** --- ***\n");
+        console.log(`${separator}\n`);
     }
 
     private resetData() {
@@ -129,7 +136,7 @@ class BinanceTrendBot {
         } while (++count < ticks);
     }
 
-    private async getPriceResistance() {
+    private async getPriceResistance(): Promise<IPriceTrend> {
         if (!this.medianPrice)
             this.medianPrice = await this.getMedianPrice();
 
@@ -144,13 +151,14 @@ class BinanceTrendBot {
             return this.groupedPrices;
         });
 
-        const result = this.getTrendTick(filteredHighKlines.length);
-        result.price = parseFloat((result.price * 0.9995).toFixed(2));
+        const resistance: IPriceTrend = this.getTrendTick(filteredHighKlines.length);
 
-        return result
+        resistance.price = parseFloat((resistance.price * 0.9995).toFixed(2));
+
+        return resistance;
     }
 
-    private async getPriceSupport() {
+    private async getPriceSupport(): Promise<IPriceTrend> {
         if (!this.medianPrice)
             this.medianPrice = await this.getMedianPrice();
 
@@ -165,10 +173,11 @@ class BinanceTrendBot {
             return this.groupedPrices;
         });
 
-        const result = this.getTrendTick(filteredLowKlines.length);
-        result.price = parseFloat((result.price * 0.9995).toFixed(2));
+        const support: IPriceTrend = this.getTrendTick(filteredLowKlines.length);
 
-        return result
+        support.price = parseFloat((support.price * 0.9995).toFixed(2));
+
+        return support;
     }
 }
 
