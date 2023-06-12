@@ -29,14 +29,42 @@ class BinanceTrendBot {
         setInterval(() => this.fetchData(), (1000 * 60) * 15); // refresh the data every 15 minutes.
     }
 
-    async getKlinesList(): Promise<Kline[]> {
-        if (!this.klinesList.length)
-            await this.fetchData();
+    async fetchData() {
+        console.log("Updating klines data...");
+        const response = await this.axiosRequest.get();
 
-        return this.klinesList;
+        this.resetData();
+        response.forEach(
+            (kline: Array<string | number>) => this.klinesList.push(new Kline(kline))
+        )
+        console.log("Klines data updated.");
+
+        this.log();
     }
 
-    async getHighestPrice(): Promise<number> {
+    private async log() {
+        console.log("\n--- *** ---");
+        console.log("Máxima:", await this.getHighestPrice());
+        console.log("Média:", await this.getMedianPrice());
+        console.log("Mínima:", await this.getLowestPrice());
+        console.log("Resistência:", await this.getPriceResistance());
+        console.log("Suporte:", await this.getPriceSupport());
+        console.log("*** --- ***\n");
+    }
+
+    private resetData() {
+        if (Object.keys(this.groupedPrices).length)
+            this.groupedPrices = new Object();
+
+        if (this.klinesList.length)
+            this.klinesList = new Array<Kline>;
+
+        this.lowestPrice = 0;
+        this.highestPrice = 0;
+        this.medianPrice = 0;
+    }
+
+    private async getHighestPrice(): Promise<number> {
         if (!this.klinesList.length)
             await this.fetchData();
 
@@ -48,7 +76,7 @@ class BinanceTrendBot {
         return this.highestPrice;
     }
 
-    async getLowestPrice(): Promise<number> {
+    private async getLowestPrice(): Promise<number> {
         if (!this.klinesList.length)
             await this.fetchData();
 
@@ -58,7 +86,7 @@ class BinanceTrendBot {
         return this.lowestPrice;
     }
 
-    async getMedianPrice() {
+    private async getMedianPrice() {
         if (!this.lowestPrice)
             this.lowestPrice = await this.getLowestPrice();
 
@@ -73,48 +101,16 @@ class BinanceTrendBot {
         return this.medianPrice;
     }
 
-    async getPriceResistance() {
-        if (!this.medianPrice)
-            this.medianPrice = await this.getMedianPrice();
-
-        if (Object.keys(this.groupedPrices).length)
-            this.groupedPrices = new Object();
-
-        const filteredSupKlines = this.klinesList.filter(kline => kline.highPrice > this.medianPrice)
-
-        filteredSupKlines.map(kline => {
-            this.getGroupedTicks(kline);
-
-            return this.groupedPrices;
-        });
-
-        return this.getTrendTick(filteredSupKlines.length)
-    }
-
-    async getPriceSupport() {
-        if (!this.medianPrice)
-            this.medianPrice = await this.getMedianPrice();
-
-        if (Object.keys(this.groupedPrices).length)
-            this.groupedPrices = new Object();
-
-        const filteredSupKlines = this.klinesList.filter(kline => kline.lowPrice < this.medianPrice)
-
-        filteredSupKlines.map(kline => {
-            this.getGroupedTicks(kline);
-
-            return this.groupedPrices;
-        });
-
-        return this.getTrendTick(filteredSupKlines.length)
-    }
-
     private getTrendTick(total: number) {
         const arr = Object.keys(this.groupedPrices).map(key => {
-            return { tick: key, count: this.groupedPrices[key] }
+            return { price: key, count: this.groupedPrices[key] }
         });
 
-        return { ...arr.sort((el1, el2) => el1.count - el2.count)[arr.length - 1], total }
+        const sortedPrice = arr.sort((price1, price2) => {
+            return (price1.count - price2.count);
+        })[arr.length - 1];
+
+        return { price: parseFloat(sortedPrice.price), count: sortedPrice.count, total }
     }
 
     private getGroupedTicks(kline: Kline) {
@@ -123,27 +119,56 @@ class BinanceTrendBot {
         let count = 1;
 
         do {
-            const tick = (kline.lowPrice + (this.TICK_SIZE * count)).toFixed(2);
+            const sortedPrice = (kline.lowPrice + (this.TICK_SIZE * count)).toFixed(2);
 
-            if (!this.groupedPrices[tick])
-                this.groupedPrices[tick] = 1;
+            if (!this.groupedPrices[sortedPrice])
+                this.groupedPrices[sortedPrice] = 1;
             else
-                this.groupedPrices[tick]++;
+                this.groupedPrices[sortedPrice]++;
 
         } while (++count < ticks);
     }
 
-    private async fetchData() {
-        console.log("Updating klines data...");
-        const response = await this.axiosRequest.get();
+    private async getPriceResistance() {
+        if (!this.medianPrice)
+            this.medianPrice = await this.getMedianPrice();
 
-        if (this.klinesList.length)
-            this.klinesList = new Array<Kline>;
+        if (Object.keys(this.groupedPrices).length)
+            this.groupedPrices = new Object();
 
-        response.forEach(
-            (kline: Array<string | number>) => this.klinesList.push(new Kline(kline))
-        )
-        console.log("Klines data updated.");
+        const filteredHighKlines = this.klinesList.filter(kline => kline.highPrice > this.medianPrice)
+
+        filteredHighKlines.map(kline => {
+            this.getGroupedTicks(kline);
+
+            return this.groupedPrices;
+        });
+
+        const result = this.getTrendTick(filteredHighKlines.length);
+        result.price = parseFloat((result.price * 0.9995).toFixed(2));
+
+        return result
+    }
+
+    private async getPriceSupport() {
+        if (!this.medianPrice)
+            this.medianPrice = await this.getMedianPrice();
+
+        if (Object.keys(this.groupedPrices).length)
+            this.groupedPrices = new Object();
+
+        const filteredLowKlines = this.klinesList.filter(kline => kline.lowPrice < this.medianPrice)
+
+        filteredLowKlines.map(kline => {
+            this.getGroupedTicks(kline);
+
+            return this.groupedPrices;
+        });
+
+        const result = this.getTrendTick(filteredLowKlines.length);
+        result.price = parseFloat((result.price * 0.9995).toFixed(2));
+
+        return result
     }
 }
 
