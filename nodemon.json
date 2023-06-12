@@ -5,7 +5,8 @@
         "**/fixtures/**"
     ],
     "watch": [
-        "src/connections/"
+        "src/connections/",
+        "src/models/"
     ],
     "ext": "ts",
     "execMap": {

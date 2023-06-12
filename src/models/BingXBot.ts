@@ -1,7 +1,7 @@
 import { AxiosRequest } from "../connections/axios";
 import { IOFile } from "../utils/IOFile";
 import { Enums, Side, Type } from "../utils/enums";
-import { INewOrderPayloadBingX, TradeData, TradeResponse } from "./wss";
+import { INewOrderPayloadBingX, TradeData, TradeResponse } from "../interfaces/interfaces";
 import CryptoJS from "crypto-js";
 
 class BingXBot {
@@ -114,30 +114,4 @@ class BingXBot {
     }
 }
 
-class BinanceTrendBot {
-    private readonly axiosRequest: AxiosRequest;
-    private currPriceResistance: number;
-    private currPriceSupport: number;
-
-    constructor(symbol: string, interval: string, limit?: number) {
-        if (limit && limit < 1)
-            throw new Error("The minimum value to the limit is 1.");
-
-        if (limit && limit > 1000)
-            throw new Error("The maximum value to the limit is 1000.");
-
-        let uri = `https://api4.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}`
-        uri += limit ? `&limit=${limit}` : "";
-
-        this.axiosRequest = new AxiosRequest();
-        this.axiosRequest.setURI(uri)
-    }
-
-    async test() {
-        this.axiosRequest.get().then(response => {
-            console.log(response);
-        });
-    }
-}
-
-export { BingXBot, BinanceTrendBot }
+export { BingXBot }

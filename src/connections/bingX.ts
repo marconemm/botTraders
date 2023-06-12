@@ -2,9 +2,9 @@ require("dotenv").config();
 
 import WebSocket from "ws";
 import { randomUUID } from "crypto";
-import { PingResponse, Subscription, TradeResponse } from "../models/wss";
+import { PingResponse, Subscription, TradeResponse } from "../interfaces/interfaces";
 import { Enums, Type } from "../utils/enums";
-import { BingXBot } from "../models/bots";
+import { BingXBot } from "../models/BingXBot";
 
 const bingXBot = new BingXBot(Type.MARKET, "/openApi/swap/v2/trade/order");
 const ws = new WebSocket(process.env.STREAM_URL || "");
