@@ -33,7 +33,9 @@ class AxiosRequest {
             .then(res => {
                 return res.data
             })
-            .catch((error: Error) => console.error(error));
+            .catch((error: Error) => {
+                console.error(error)
+            });
     }
 }
 
