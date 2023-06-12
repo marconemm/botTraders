@@ -14,6 +14,8 @@ class BingXBot {
     private readonly tBotBinanceBTCUSDT: BinanceTrendBot;
 
     private hasOrder: boolean
+    private currResistance: number;
+    private currSupport: number;
 
     constructor(type: Type, endPoint: string) {
         const interval = ((60 / 5) * 24) * 1;
@@ -36,20 +38,42 @@ class BingXBot {
         }
 
         if (data.symbol) {
+            this.currResistance = await this.tBotBinanceBTCUSDT.getCurrResistance();
+            this.currSupport = await this.tBotBinanceBTCUSDT.getCurrSupport();
+
             console.log(`\nPar: ${data.symbol}\nPreço atual: ${data.price}`);
-            console.log(`Resistência: ${await this.tBotBinanceBTCUSDT.getCurrResistance()}`);
-            console.log(`Suporte: ${await this.tBotBinanceBTCUSDT.getCurrSupport()}`);
+            console.log(`Resistência: ${this.currResistance}`);
+            console.log(`Suporte: ${this.currSupport}`);
         }
 
-        if (!this.hasOrder && data.price <= 26600) {
-            this.hasOrder = true;
+        if (this.isToBuy(data.price))
             await this.newOrder(Side.BUY, this.type, data);
 
-        }
-        else if (this.hasOrder && data.price > 26700) {
-            this.hasOrder = false;
+        else if (this.isToSell(data.price))
             await this.newOrder(Side.SELL, this.type, data);
-        }
+
+    }
+
+    private isToBuy(currPrice: number): boolean {
+        const isPriceUnderSupport = currPrice <= this.currSupport;
+        let isToBuy: boolean = !this.hasOrder;
+
+        isToBuy = isToBuy && isPriceUnderSupport;
+
+        this.hasOrder = isToBuy;
+
+        return isToBuy;
+    }
+
+    private isToSell(currPrice: number): boolean {
+        const isPriceOverResistance = currPrice > this.currResistance;
+        let isToSell: boolean = !this.hasOrder;
+
+        isToSell = isToSell && isPriceOverResistance;
+
+        this.hasOrder = !isToSell;
+
+        return isToSell;
     }
 
     private newOrder = async (side: Side, type: Type, data: ITradeData) => {
