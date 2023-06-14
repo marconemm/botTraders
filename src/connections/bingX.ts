@@ -6,7 +6,7 @@ import { IPingResponse, ISubscription, ITradeResponse } from "../interfaces/inte
 import { Enums, Type } from "../utils/enums";
 import { BingXBot } from "../models/BingXBot";
 
-const bingXBot = new BingXBot(Type.MARKET, "/openApi/swap/v2/trade/order");
+const bingXBot = new BingXBot(Type.MARKET, "/openApi/spot/v1/trade/order");
 const ws = new WebSocket(process.env.STREAM_URL || "");
 const textDecoder = new TextDecoder(Enums.UTF_8);
 const subscription: ISubscription = {
@@ -16,6 +16,7 @@ const subscription: ISubscription = {
 };
 const pingTimeout: NodeJS.Timeout = setTimeout(() => {
 	ws.terminate();
+	process.exit(1);
 }, 31000);
 
 ws.onopen = event => {

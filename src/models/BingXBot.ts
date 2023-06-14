@@ -1,6 +1,6 @@
 import { AxiosRequest } from "../connections/axios";
 import { IOFile } from "../utils/IOFile";
-import { Enums, Side, Type } from "../utils/enums";
+import { Enums, KlineLimit, Side, Type } from "../utils/enums";
 import { INewOrderPayloadBingX, ITradeData, ITradeResponse } from "../interfaces/interfaces";
 import CryptoJS from "crypto-js";
 import { BinanceTrendBot } from "./BinanceTrendBot";
@@ -18,15 +18,13 @@ class BingXBot {
     private currSupport: number;
 
     constructor(type: Type, endPoint: string) {
-        const interval = 60; // to 5m:  ((60 / 5) * 24) * 1
-
         this.ioFile = new IOFile(Enums.CASH_FILENAME, Enums.UTF_8);
         this.cashedData = this.ioFile.readFile();
         this.type = type;
         this.endpoint = endPoint;
         this.isBought = this.cashedData?.isBought || false;
         this.axiosRequest = new AxiosRequest({ 'X-BX-APIKEY': process.env.API_KEY || "" });
-        this.tBotBinanceBTCUSDT = new BinanceTrendBot("BTCUSDT", "1h", interval);
+        this.tBotBinanceBTCUSDT = new BinanceTrendBot("BTCUSDT", "1m", KlineLimit.DAY_BY_MIN);
         this.tBotBinanceBTCUSDT.fetchData();
     }
 
@@ -55,21 +53,23 @@ class BingXBot {
         }
 
         if (data.price) {
-            if (this.isToBuy(data.price))
+            if (this.isToBuy(data.price)) {
+                this.isBought = true;
                 await this.newOrder(Side.BUY, this.type, data);
+            }
 
-            else if (this.isToSell(data.price))
+            else if (this.isToSell(data.price)) {
+                this.isBought = false;
                 await this.newOrder(Side.SELL, this.type, data);
+            }
         }
 
     }
 
     private isToBuy(currPrice: number): boolean {
-        const buyPrice = (1 - (0.3 / 100)) * this.currSupport;
+        const buyPrice = (1 - (0.1 / 100)) * this.currSupport;
         const isPriceUnderSupport = currPrice <= buyPrice;
         const isToBuy: boolean = isPriceUnderSupport && !this.isBought;
-
-        this.isBought = isToBuy;
 
         return isToBuy;
     }
@@ -79,8 +79,6 @@ class BingXBot {
         const isPriceOverResistance = currPrice > sellPrice;
         const isToSell: boolean = isPriceOverResistance && this.isBought;
 
-        this.isBought = isToSell;
-
         return isToSell;
     }
 
@@ -89,8 +87,8 @@ class BingXBot {
             symbol: data.symbol,
             side: side,
             type: type,
-            quantity: data.quantity,
-            quoteOrderQty: this.cashedData.quoteOrderQty,
+            quantity: (side == Side.SELL) ? data.quantity : undefined,
+            quoteOrderQty: (side == Side.BUY) ? this.cashedData.quoteOrderQty : undefined,
             price: (type == Type.LIMIT) ? data.price : undefined
         }
 
@@ -121,33 +119,33 @@ class BingXBot {
         console.log(`Quantidade: ${data.quantity}BTC`);
 
         if (response) {
-            console.log("__\nResultado:");
+            console.log("__\nResposta da corretora:");
             console.log(response);
 
-            if (!response.success) {
+            if (response.code != 0) { // The code 0 means success:
                 this.isBought = false;
-                this.ioFile.updateFile({ isBought: this.isBought });
+                this.ioFile.updateFile({ isBought: false });
             }
-
-        } else {
-            this.isBought = false;
-            this.ioFile.updateFile({ isBought: this.isBought });
         }
 
         console.log("=== *** ===\n");
     }
 
     private getURI(payload: INewOrderPayloadBingX) {
-        const parameters = new URLSearchParams(JSON.stringify(payload))
-        const timestamp = new Date().getTime()
+        let parameters = "";
 
-        parameters.append("timestamp", timestamp.toString())
+        for (const key in payload)
+            if (payload[key])
+                parameters += `${key}=${payload[key]}&`;
+
+        parameters += `timestamp=${new Date().getTime()}`;
+
 
         const sign = CryptoJS.enc.Hex.stringify(
-            CryptoJS.HmacSHA256(parameters.toString(), (process.env.API_KEY || "(invalid)"))
-        )
+            CryptoJS.HmacSHA256(parameters.toString(), (process.env.API_SECRET || "(invalid)"))
+        );
 
-        parameters.append("signature", sign.toString())
+        parameters += `&signature=${sign}`;
 
         return `${process.env.API_URL}${this.endpoint}?${parameters.toString()}`;
     }
