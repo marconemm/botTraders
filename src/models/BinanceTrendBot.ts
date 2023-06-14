@@ -21,7 +21,8 @@ class BinanceTrendBot {
         if (limit && limit > 1000)
             throw new Error("The maximum value to the limit is 1000.");
 
-        let uri = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}`
+        let uri = `${process.env.API_BINANCE_URL}/api/v3/klines`
+        uri += `?symbol=${symbol}&interval=${interval}`
         uri += limit ? `&limit=${limit}` : "";
 
         this.axiosRequest = new AxiosRequest();
@@ -47,16 +48,24 @@ class BinanceTrendBot {
         this.log();
     }
 
-    async getCurrResistance(): Promise<number> {
-        if (!this.currResistance)
-            await this.getCurrResistance();
+    getCurrResistance(): number {
+        const checkValue = async () => {
+            if (!this.currResistance)
+                await this.setPriceResistance();
+        }
+
+        checkValue();
 
         return this.currResistance;
     }
 
-    async getCurrSupport(): Promise<number> {
-        if (!this.currSupport)
-            await this.getCurrSupport();
+    getCurrSupport(): number {
+        const checkValue = async () => {
+            if (!this.currSupport)
+                await this.setPriceSupport();
+        }
+
+        checkValue();
 
         return this.currSupport;
     }
@@ -70,8 +79,8 @@ class BinanceTrendBot {
         console.log("Máxima:", await this.getHighestPrice());
         console.log("Média:", await this.getMedianPrice());
         console.log("Mínima:", await this.getLowestPrice());
-        console.log("Resistência:", await this.getPriceResistance());
-        console.log("Suporte:", await this.getPriceSupport());
+        console.log("Resistência:", this.getCurrResistance());
+        console.log("Suporte:", this.getCurrSupport());
         console.log(`${separator}\n`);
     }
 
@@ -152,14 +161,15 @@ class BinanceTrendBot {
         } while (++count < ticks);
     }
 
-    private async getPriceResistance(): Promise<IPriceTrend> {
+    private async setPriceResistance(): Promise<IPriceTrend> {
         if (!this.medianPrice)
             this.medianPrice = await this.getMedianPrice();
 
         if (Object.keys(this.groupedPrices).length)
             this.groupedPrices = new Object();
 
-        const filteredHighKlines = this.klinesList.filter(kline => kline.highPrice > this.medianPrice)
+        const filteredHighKlines = this.klinesList.filter(kline => kline.highPrice > this.medianPrice);
+
 
         filteredHighKlines.map(kline => {
             this.getGroupedTicks(kline);
@@ -169,20 +179,21 @@ class BinanceTrendBot {
 
         const resistance: IPriceTrend = this.getTrendTick(filteredHighKlines.length);
 
-        resistance.price = parseFloat((resistance.price * 0.9995).toFixed(2));
+        resistance.price = parseFloat(resistance.price.toFixed(2));
         this.currResistance = resistance.price;
 
         return resistance;
     }
 
-    private async getPriceSupport(): Promise<IPriceTrend> {
+    private async setPriceSupport(): Promise<IPriceTrend> {
         if (!this.medianPrice)
             this.medianPrice = await this.getMedianPrice();
 
         if (Object.keys(this.groupedPrices).length)
             this.groupedPrices = new Object();
 
-        const filteredLowKlines = this.klinesList.filter(kline => kline.lowPrice < this.medianPrice)
+        const filteredLowKlines = this.klinesList.filter(kline => kline.lowPrice < this.medianPrice);
+
 
         filteredLowKlines.map(kline => {
             this.getGroupedTicks(kline);
@@ -192,7 +203,7 @@ class BinanceTrendBot {
 
         const support: IPriceTrend = this.getTrendTick(filteredLowKlines.length);
 
-        support.price = parseFloat((support.price * 0.9995).toFixed(2));
+        support.price = parseFloat(support.price.toFixed(2));
         this.currSupport = support.price;
 
         return support;
