@@ -24,8 +24,17 @@ export enum RestMethod {
     POST = "POST"
 }
 
+export enum KLineInterval {
+    _1MIN = "1m",
+    _5MIN = "5m",
+    _10MIN = "10m",
+    _15MIN = "15m",
+    _30MIN = "30m",
+    _1HOUR = "1h"
+}
+
 export enum KlineLimit {
-    DAY_BY_MIN = 480,
+    _5H_BY_1MIN = 300,
     DAY_BY_5MIN = 288,
     DAY_BY_10MIN = 144,
     DAY_BY_15MIN = 96,

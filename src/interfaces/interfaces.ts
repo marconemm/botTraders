@@ -1,3 +1,5 @@
+import { KLineInterval, KlineLimit } from "../utils/enums";
+
 export interface ITradeData {
     price: number;
     symbol: string;
@@ -6,9 +8,9 @@ export interface ITradeData {
 }
 
 export interface ISubscription {
-    id: string,
-    reqType: string,
-    dataType: string
+    id: string;
+    reqType: string;
+    dataType: string;
 }
 
 export interface IPingResponse {
@@ -46,5 +48,10 @@ export interface INewOrderPayloadBingX {
 export interface IPriceTrend {
     price: number;
     count: number;
-    total: number
+    total: number;
+}
+
+export interface IKlinesParameters {
+    interval: KLineInterval;
+    limit: KlineLimit;
 }

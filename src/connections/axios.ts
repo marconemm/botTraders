@@ -31,6 +31,7 @@ class AxiosRequest {
             timeout: this.timeout
         })
             .then(res => {
+                this.uri = ""; // to avoid an accidental double call to the same URI.
                 return res.data
             })
             .catch((error: Error) => {

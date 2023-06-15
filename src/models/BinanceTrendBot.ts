@@ -1,11 +1,12 @@
 import { AxiosRequest } from "../connections/axios";
-import { IPriceTrend } from "../interfaces/interfaces";
+import { IKlinesParameters, IPriceTrend } from "../interfaces/interfaces";
 import { Kline } from "./Kline";
 
 class BinanceTrendBot {
     private readonly axiosRequest: AxiosRequest;
     private readonly TICK_SIZE: number;
     private readonly SYMBOL: string;
+    private readonly floatMargin: number;
     private groupedPrices: {}
     private klinesList: Kline[];
     private lowestPrice: number;
@@ -14,20 +15,21 @@ class BinanceTrendBot {
     private currResistance: number;
     private currSupport: number;
 
-    constructor(symbol: string, interval: string, limit?: number) {
-        if (limit && limit < 1)
+    constructor(symbol: string, parameters: IKlinesParameters) {
+        if (parameters.limit < 1)
             throw new Error("The minimum value to the limit is 1.");
 
-        if (limit && limit > 1000)
+        if (parameters.limit > 1000)
             throw new Error("The maximum value to the limit is 1000.");
 
         let uri = `${process.env.API_BINANCE_URL}/api/v3/klines`
-        uri += `?symbol=${symbol}&interval=${interval}`
-        uri += limit ? `&limit=${limit}` : "";
+        uri += `?symbol=${symbol}&interval=${parameters.interval}`
+        uri += `&limit=${parameters.limit}`;
 
         this.axiosRequest = new AxiosRequest();
         this.TICK_SIZE = 0.01;
         this.SYMBOL = symbol;
+        this.floatMargin = (0.03 / 100);
         this.groupedPrices = new Object();
         this.axiosRequest.setURI(uri)
         this.klinesList = new Array<Kline>;
@@ -50,8 +52,11 @@ class BinanceTrendBot {
 
     getCurrResistance(): number {
         const checkValue = async () => {
-            if (!this.currResistance)
+            if (!this.currResistance) {
                 await this.setPriceResistance();
+                this.currResistance *= (1 + this.floatMargin);
+                this.currResistance = parseFloat(this.currResistance.toFixed(2));
+            }
         }
 
         checkValue();
@@ -61,8 +66,11 @@ class BinanceTrendBot {
 
     getCurrSupport(): number {
         const checkValue = async () => {
-            if (!this.currSupport)
+            if (!this.currSupport) {
                 await this.setPriceSupport();
+                this.currSupport *= (1 - this.floatMargin);
+                this.currSupport = parseFloat(this.currSupport.toFixed(2));
+            }
         }
 
         checkValue();
