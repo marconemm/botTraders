@@ -14,6 +14,7 @@ class BinanceTrendBot {
     private medianPrice: number;
     private currResistance: number;
     private currSupport: number;
+    private uri: string;
 
     constructor(symbol: string, parameters: IKlinesParameters) {
         if (parameters.limit < 1)
@@ -22,23 +23,26 @@ class BinanceTrendBot {
         if (parameters.limit > 1000)
             throw new Error("The maximum value to the limit is 1000.");
 
-        let uri = `${process.env.API_BINANCE_URL}/api/v3/klines`
-        uri += `?symbol=${symbol}&interval=${parameters.interval}`
-        uri += `&limit=${parameters.limit}`;
+        this.uri = `${process.env.API_BINANCE_URL}/api/v3/klines`
+        this.uri += `?symbol=${symbol}&interval=${parameters.interval}`
+        this.uri += `&limit=${parameters.limit}`;
 
         this.axiosRequest = new AxiosRequest();
         this.TICK_SIZE = 0.01;
         this.SYMBOL = symbol;
         this.floatMargin = (0.03 / 100);
         this.groupedPrices = new Object();
-        this.axiosRequest.setURI(uri)
+        this.axiosRequest.setURI(this.uri);
         this.klinesList = new Array<Kline>;
+        this.lowestPrice = this.highestPrice = this.medianPrice = 0;
 
         setInterval(() => this.fetchData(), (1000 * 60) * 15); // refresh the data every 15 minutes.
     }
 
     async fetchData() {
+        this.axiosRequest.setURI(this.uri);
         console.log("Updating klines data...");
+
         const response = await this.axiosRequest.get();
 
         this.resetData();
@@ -51,29 +55,29 @@ class BinanceTrendBot {
     }
 
     getCurrResistance(): number {
-        const checkValue = async () => {
-            if (!this.currResistance) {
-                await this.setPriceResistance();
-                this.currResistance *= (1 + this.floatMargin);
-                this.currResistance = parseFloat(this.currResistance.toFixed(2));
+        async function checkValue(self: BinanceTrendBot): Promise<void> {
+            if (!self.currResistance) {
+                await self.setPriceResistance();
+                self.currResistance *= (1 + self.floatMargin);
+                self.currResistance = parseFloat(self.currResistance.toFixed(2));
             }
         }
 
-        checkValue();
+        checkValue(this);
 
         return this.currResistance;
     }
 
     getCurrSupport(): number {
-        const checkValue = async () => {
-            if (!this.currSupport) {
-                await this.setPriceSupport();
-                this.currSupport *= (1 - this.floatMargin);
-                this.currSupport = parseFloat(this.currSupport.toFixed(2));
+        async function checkValue(self: BinanceTrendBot): Promise<void> {
+            if (!self.currSupport) {
+                await self.setPriceSupport();
+                self.currSupport *= (1 - self.floatMargin);
+                self.currSupport = parseFloat(self.currSupport.toFixed(2));
             }
         }
 
-        checkValue();
+        checkValue(this);
 
         return this.currSupport;
     }
@@ -93,15 +97,10 @@ class BinanceTrendBot {
     }
 
     private resetData() {
-        if (Object.keys(this.groupedPrices).length)
-            this.groupedPrices = new Object();
-
-        if (this.klinesList.length)
-            this.klinesList = new Array<Kline>;
-
-        this.lowestPrice = 0;
-        this.highestPrice = 0;
-        this.medianPrice = 0;
+        this.groupedPrices = new Object();
+        this.klinesList = new Array<Kline>;
+        this.lowestPrice = this.highestPrice = this.medianPrice = 0;
+        this.currResistance = this.currSupport = 0;
     }
 
     private async getHighestPrice(): Promise<number> {
