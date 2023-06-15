@@ -1,13 +1,19 @@
 import { AxiosRequest } from "../connections/axios";
 import { IOFile } from "../utils/IOFile";
 import { Enums, KLineInterval, KlineLimit, Side, Type } from "../utils/enums";
-import { IKlinesParameters, INewOrderPayloadBingX, ITradeData, ITradeResponse } from "../interfaces/interfaces";
+import {
+    ICashedData,
+    IKlinesParameters,
+    INewOrderPayloadBingX,
+    ITradeData,
+    ITradeResponse
+} from "../interfaces/interfaces";
 import CryptoJS from "crypto-js";
 import { BinanceTrendBot } from "./BinanceTrendBot";
 
 class BingXBot {
     private readonly ioFile: IOFile;
-    private readonly cashedData: any;
+    private readonly cashedData: ICashedData;
     private readonly type: Type;
     private readonly endpoint: string;
     private readonly axiosRequest: AxiosRequest;
@@ -26,7 +32,7 @@ class BingXBot {
         this.cashedData = this.ioFile.readFile();
         this.type = type;
         this.endpoint = endPoint;
-        this.isBought = this.cashedData?.isBought || false;
+        this.isBought = this.cashedData.isBought;
         this.axiosRequest = new AxiosRequest({ 'X-BX-APIKEY': process.env.API_KEY || "" });
         this.tBotBinanceBTCUSDT = new BinanceTrendBot("BTCUSDT", parameters);
         this.tBotBinanceBTCUSDT.fetchData();
@@ -72,7 +78,9 @@ class BingXBot {
 
     private isToSell(currPrice: number): boolean {
         const isPriceOverResistance = currPrice > this.currResistance;
-        const isToSell: boolean = isPriceOverResistance && this.isBought;
+        let isToSell: boolean = isPriceOverResistance && this.isBought;
+
+        isToSell = isToSell && currPrice > this.cashedData.price * 1.0015;
 
         return isToSell;
     }

@@ -55,3 +55,13 @@ export interface IKlinesParameters {
     interval: KLineInterval;
     limit: KlineLimit;
 }
+
+export interface ICashedData {
+    symbol: string;
+    side: string;
+    type: string;
+    quantity?: number;
+    quoteOrderQty: number;
+    price: number;
+    isBought: boolean;
+}
