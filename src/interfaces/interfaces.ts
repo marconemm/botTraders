@@ -61,7 +61,8 @@ export interface ICashedData {
     side: string;
     type: string;
     quantity?: number;
-    quoteOrderQty: number;
+    quoteOrderQty?: number;
     price: number;
     isBought: boolean;
+    history?: ICashedData[]
 }

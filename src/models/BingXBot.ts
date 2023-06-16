@@ -86,6 +86,9 @@ class BingXBot {
     }
 
     private newOrder = async (side: Side, type: Type, data: ITradeData) => {
+        const history: ICashedData[] = [...this.cashedData.history];
+        delete this.cashedData.history;
+
         const newOrderPayload: INewOrderPayloadBingX = {
             symbol: data.symbol,
             side: side,
@@ -95,8 +98,14 @@ class BingXBot {
             price: (type == Type.LIMIT) ? data.price : undefined
         }
 
-        const uri = this.getURI(newOrderPayload)
-        const dataToCash: any = { ...newOrderPayload, ...data, isBought: this.isBought };
+        const uri = this.getURI(newOrderPayload);
+        history.unshift(this.cashedData);
+        const dataToCash: ICashedData = {
+            ...newOrderPayload,
+            ...data,
+            isBought: this.isBought,
+            history
+        };
 
         this.ioFile.createFile(dataToCash);
         this.axiosRequest.setURI(uri);
