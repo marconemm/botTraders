@@ -127,17 +127,13 @@ class BingXBot {
             console.log(response);
 
             if ((response.code == 0)) { // The code 0 means success:
+                const savedData: ICashedData = this.ioFile.readFile();
                 const { data } = response;
-                const quoteOrderQty = parseFloat(data.cummulativeQuoteQty).toFixed(2);
-                const quantity = parseFloat(data.executedQty);
 
-                this.ioFile.updateFile(
-                    {
-                        quantity: quantity,
-                        quoteOrderQty: parseFloat(quoteOrderQty) - 0.01,
-                        time: new Date(data.transactTime)
-                    }
-                );
+                savedData.history.forEach((el: ICashedData) => delete el.isBought);
+                savedData.quantity = parseFloat(data.executedQty);
+                savedData.quoteOrderQty = parseFloat(data.cummulativeQuoteQty) - 0.01;
+                this.ioFile.updateFile({ ...savedData, time: new Date(data.transactTime) });
             }
             else {
                 this.isBought = false;

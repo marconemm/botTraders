@@ -16,8 +16,7 @@ const subscription: ISubscription = {
 };
 const pingTimeout: NodeJS.Timeout = setTimeout(() => {
 	ws.terminate();
-	process.exit(1);
-}, 31000);
+}, 35000);
 
 ws.onopen = event => {
 	const { target } = event;
@@ -37,7 +36,10 @@ ws.onmessage = async (event: WebSocket.MessageEvent) => {
 };
 
 ws.onclose = () => {
-	console.log("Encerrada a conexão com o WSS.");
+	let msg = "Nenhum Ping foi recebido nos últimos 35s.";
+	msg += "\nLogo, a conexão com a WSS foi encerrada."
+
+	console.log(msg);
 	process.exit();
 }
 
