@@ -33,7 +33,7 @@ class BinanceTrendBot {
         this.floatMargin = (0.03 / 100);
         this.groupedPrices = new Object();
         this.axiosRequest.setURI(this.uri);
-        this.klinesList = new Array<Kline>;
+        this.klinesList = new Array<Kline>();
         this.lowestPrice = this.highestPrice = this.medianPrice = 0;
 
         setInterval(() => this.fetchData(), (1000 * 60) * 15); // refresh the data every 15 minutes.
@@ -98,7 +98,7 @@ class BinanceTrendBot {
 
     private resetData() {
         this.groupedPrices = new Object();
-        this.klinesList = new Array<Kline>;
+        this.klinesList = new Array<Kline>();
         this.lowestPrice = this.highestPrice = this.medianPrice = 0;
         this.currResistance = this.currSupport = 0;
     }

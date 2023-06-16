@@ -10,6 +10,6 @@
     ],
     "ext": "ts",
     "execMap": {
-        "ts": "sucrase-node "
+        "ts": "ts-node"
     }
 }
