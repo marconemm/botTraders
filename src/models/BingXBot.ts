@@ -78,12 +78,18 @@ class BingXBot {
     }
 
     private isToSell(currPrice: number): boolean {
-        const isPriceOverResistance = currPrice > this.currResistance;
-        let isToSell: boolean = this.isBought && (currPrice > this.cashedData.price * 1.002);
+        const minimumGain = this.cashedData.price * 1.002;
+        const isOverResistance = currPrice > this.currResistance;
+        const isOverMinimumGain = currPrice > minimumGain;
+        const isToSell: boolean = this.isBought && isOverResistance;
 
-        isToSell = isToSell && isPriceOverResistance;
+        if (isOverResistance && !isOverMinimumGain) {
+            let msg = "\n=> O preço superou a resistência,";
+            msg += ` mas ainda está abaixo do ganho mínimo: $${minimumGain}.`;
+            console.log(msg);
+        }
 
-        return isToSell;
+        return isToSell && isOverMinimumGain;
     }
 
     private newOrder = async (side: Side, type: Type, tradeData: ITradeData) => {
