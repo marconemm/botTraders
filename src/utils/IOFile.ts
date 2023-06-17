@@ -1,5 +1,4 @@
 import fs from "fs";
-import { Enums } from "./enums";
 
 export class IOFile {
     private readonly encoder: BufferEncoding;
@@ -25,9 +24,16 @@ export class IOFile {
     }
 
     readFile() {
+        const initialAmountUsd = parseFloat(process.env.AMOUNT_USD.replace(",", "."));
+        const initialAmountCoin = parseFloat(process.env.AMOUNT_COIN.replace(",", "."));
+
         return (fs.existsSync(this.filename))
             ? JSON.parse(fs.readFileSync(this.filename).toString(this.encoder))
-            : {};
+            : {
+                quantity: initialAmountCoin ? initialAmountCoin : 0.00001,
+                quoteOrderQty: initialAmountUsd ? initialAmountUsd : 1,
+                history: []
+            };
     }
 
     updateFile(data: any = undefined) {

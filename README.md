@@ -22,10 +22,12 @@ Projeto de bot para Binance Spot (dia 1)
 ## Como executar?
 
 1. Clone este repositório;
-2. abra a pasta onde o mesmo foi clonado no seu terminal;
-3. execute o comando `npm install`;
-4. configure um arquivo _".env"_ conforme o exemplo presente no arquivo _".env.example"_; e
-5. execute o comando `npm conn:bing`.
+2. abra a pasta onde o mesmo foi clonado;
+3. configure um arquivo _".env"_ conforme o exemplo presente no arquivo _".env.example"_;
+4. informe os valores de **API_KEY**, **API_SECRET**, **AMOUNT_USD** e **AMOUNT_COIN** ;
+5. abra o seu terminal na pasta onde o mesmo foi clonado este repositório;
+6. execute o comando `npm install`; e
+7. execute o comando `npm conn:bing`.
 
 ## Configurando o "local-cash.json"
 

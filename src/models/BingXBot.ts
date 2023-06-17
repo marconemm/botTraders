@@ -39,31 +39,32 @@ class BingXBot {
     }
 
     async evaluateTradeResponse(response: ITradeResponse) {
-        const data: ITradeData = {
+        const tradeData: ITradeData = {
             symbol: response.data?.s,
             price: parseFloat(response.data?.p),
-            quantity: this.cashedData.quantity || 0.001
+            quantity: this.cashedData.quantity,
+            quoteOrderQty: this.cashedData.quoteOrderQty
         }
 
-        if (data.symbol) {
+        if (tradeData.symbol) {
             this.currResistance = this.tBotBinanceBTCUSDT.getCurrResistance();
             this.currSupport = this.tBotBinanceBTCUSDT.getCurrSupport();
 
-            console.log(`\nPar: ${data.symbol}`);
+            console.log(`\nPar: ${tradeData.symbol}`);
             console.log(`Resistência: ${this.currResistance}`);
-            console.log(`Preço atual: ${data.price}`);
+            console.log(`Preço atual: ${tradeData.price}`);
             console.log(`Suporte: ${this.currSupport}`);
         }
 
-        if (data.price) {
-            if (this.isToBuy(data.price)) {
+        if (tradeData.price) {
+            if (this.isToBuy(tradeData.price)) {
                 this.isBought = true;
-                await this.newOrder(Side.BUY, this.type, data);
+                await this.newOrder(Side.BUY, this.type, tradeData);
             }
 
-            else if (this.isToSell(data.price)) {
+            else if (this.isToSell(tradeData.price)) {
                 this.isBought = false;
-                await this.newOrder(Side.SELL, this.type, data);
+                await this.newOrder(Side.SELL, this.type, tradeData);
             }
         }
 
@@ -85,42 +86,42 @@ class BingXBot {
         return isToSell;
     }
 
-    private newOrder = async (side: Side, type: Type, data: ITradeData) => {
+    private newOrder = async (side: Side, type: Type, tradeData: ITradeData) => {
         const history: ICashedData[] = [...this.cashedData.history];
         delete this.cashedData.history;
 
         const newOrderPayload: INewOrderPayloadBingX = {
-            symbol: data.symbol,
+            symbol: tradeData.symbol,
             side: side,
             type: type,
-            quantity: (side == Side.SELL) ? data.quantity : undefined,
-            quoteOrderQty: (side == Side.BUY) ? this.cashedData.quoteOrderQty : undefined,
-            price: (type == Type.LIMIT) ? data.price : undefined
+            quantity: (side == Side.SELL) ? tradeData.quantity : undefined,
+            quoteOrderQty: (side == Side.BUY) ? tradeData.quoteOrderQty : undefined,
+            price: (type == Type.LIMIT) ? tradeData.price : undefined
         }
 
         const uri = this.getURI(newOrderPayload);
         history.unshift(this.cashedData);
         const dataToCash: ICashedData = {
             ...newOrderPayload,
-            ...data,
+            ...tradeData,
             isBought: this.isBought,
             history
         };
 
         this.ioFile.createFile(dataToCash);
         this.axiosRequest.setURI(uri);
-        this.log(data, side, await this.axiosRequest.post())
+        this.log(tradeData, side, await this.axiosRequest.post())
     }
 
-    private log(data: ITradeData, type: Side, response: any) {
-        const txtType = (type == Side.BUY) ? "COMPRA" : "VENDA";
+    private log(tradeData: ITradeData, side: Side, response: any) {
+        const txtType = (side == Side.BUY) ? "COMPRA" : "VENDA";
 
         console.log("\n*** === ***");
         console.log(`Ordem de ${txtType} enviada!`);
         console.log("__\nDetalhes:");
-        console.log(`Par: ${data.symbol}`);
-        console.log(`Preço: USD ${data.price}`);
-        console.log(`Quantidade: ${data.quantity}BTC`);
+        console.log(`Par: ${tradeData.symbol}`);
+        console.log(`Preço: USD ${tradeData.price}`);
+        console.log(`Quantidade: ${tradeData.quantity}BTC`);
 
         if (response) {
             console.log("__\nResposta da corretora:");
@@ -128,16 +129,22 @@ class BingXBot {
 
             if ((response.code == 0)) { // The code 0 means success:
                 const savedData: ICashedData = this.ioFile.readFile();
-                const { data } = response;
+                const { data: responseData } = response;
+                const quoteOrderQty = parseFloat(responseData.cummulativeQuoteQty).toFixed(2);
 
                 savedData.history.forEach((el: ICashedData) => delete el.isBought);
-                savedData.quantity = parseFloat(data.executedQty);
-                savedData.quoteOrderQty = parseFloat(data.cummulativeQuoteQty) - 0.01;
-                this.ioFile.updateFile({ ...savedData, time: new Date(data.transactTime) });
-            }
-            else {
-                this.isBought = false;
-                this.ioFile.updateFile({ isBought: false });
+                savedData.quantity = parseFloat(responseData.executedQty);
+                savedData.quoteOrderQty = parseFloat(quoteOrderQty) - 0.01;
+                this.ioFile.updateFile({ ...savedData, time: new Date(responseData.transactTime) });
+
+            } else {
+                if (side == Side.BUY) {
+                    this.isBought = false;
+                    this.ioFile.updateFile({ isBought: false });
+                } else {
+                    this.isBought = true;
+                    this.ioFile.updateFile({ isBought: true });
+                }
             }
         }
 
