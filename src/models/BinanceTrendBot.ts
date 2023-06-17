@@ -30,7 +30,7 @@ class BinanceTrendBot {
         this.axiosRequest = new AxiosRequest();
         this.TICK_SIZE = 0.01;
         this.SYMBOL = symbol;
-        this.floatMargin = (0.03 / 100);
+        this.floatMargin = (0.25 / 100);
         this.groupedPrices = new Object();
         this.axiosRequest.setURI(this.uri);
         this.klinesList = new Array<Kline>();
@@ -72,7 +72,7 @@ class BinanceTrendBot {
         async function checkValue(self: BinanceTrendBot): Promise<void> {
             if (!self.currSupport) {
                 await self.setPriceSupport();
-                self.currSupport *= (1 - self.floatMargin);
+                self.currSupport *= (1 - (self.floatMargin * 2.04));
                 self.currSupport = parseFloat(self.currSupport.toFixed(2));
             }
         }

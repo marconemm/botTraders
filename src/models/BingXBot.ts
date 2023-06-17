@@ -79,9 +79,9 @@ class BingXBot {
 
     private isToSell(currPrice: number): boolean {
         const isPriceOverResistance = currPrice > this.currResistance;
-        let isToSell: boolean = isPriceOverResistance && this.isBought;
+        let isToSell: boolean = this.isBought && (currPrice > this.cashedData.price * 1.002);
 
-        isToSell = isToSell && currPrice > this.cashedData.price * 1.0015;
+        isToSell = isToSell && isPriceOverResistance;
 
         return isToSell;
     }
@@ -126,29 +126,51 @@ class BingXBot {
         if (response) {
             console.log("__\nResposta da corretora:");
             console.log(response);
-
-            if ((response.code == 0)) { // The code 0 means success:
-                const savedData: ICashedData = this.ioFile.readFile();
-                const { data: responseData } = response;
-                const quoteOrderQty = parseFloat(responseData.cummulativeQuoteQty).toFixed(2);
-
-                savedData.history.forEach((el: ICashedData) => delete el.isBought);
-                savedData.quantity = parseFloat(responseData.executedQty);
-                savedData.quoteOrderQty = parseFloat(quoteOrderQty) - 0.01;
-                this.ioFile.updateFile({ ...savedData, time: new Date(responseData.transactTime) });
-
-            } else {
-                if (side == Side.BUY) {
-                    this.isBought = false;
-                    this.ioFile.updateFile({ isBought: false });
-                } else {
-                    this.isBought = true;
-                    this.ioFile.updateFile({ isBought: true });
-                }
-            }
+            console.log("__\nValores líquidos:");
+            response = this.calcLiquidValues(side, response);
+            console.log(response);
         }
 
         console.log("=== *** ===\n");
+    }
+
+    private calcLiquidValues(side: Side, response: any): any {
+        if ((response.code == 0)) { // The code 0 means success:
+            const cashedData: ICashedData = this.ioFile.readFile();
+            const { data: responseData } = response;
+            const grossQuantity = parseFloat(responseData.executedQty);
+            const grossQuoteOrderQty = parseFloat(responseData.cummulativeQuoteQty);
+            const fee = 0.9989
+
+            // liquid quantity:
+            const liquidQuantity = parseFloat((grossQuantity * fee).toFixed(8));
+            // liquid quoteOrderQty:
+            const liquidQuoteOrderQty = parseFloat((grossQuoteOrderQty * fee).toFixed(2));
+
+            // liquid quantity minus 1000sat:
+            cashedData.quantity = liquidQuantity - 0.00001;
+            // liquid quoteOrderQty minus 1.01USD:
+            cashedData.quoteOrderQty = parseFloat((liquidQuoteOrderQty - 1.005).toFixed(2));
+
+            cashedData.grossQuantity = grossQuantity;
+            cashedData.grossQuoteOrderQty = grossQuoteOrderQty;
+
+            cashedData.history.forEach((el: ICashedData) => delete el.isBought);
+            this.ioFile.updateFile({ ...cashedData, time: new Date(responseData.transactTime) });
+
+            response.data = { ...cashedData };
+
+        } else {
+            if (side == Side.BUY) {
+                this.isBought = false;
+                this.ioFile.updateFile({ isBought: false });
+            } else {
+                this.isBought = true;
+                this.ioFile.updateFile({ isBought: true });
+            }
+        }
+
+        return response;
     }
 
     private getURI(payload: INewOrderPayloadBingX) {
