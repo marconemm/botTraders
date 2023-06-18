@@ -1,12 +1,12 @@
 import { AxiosRequest } from "../connections/axios";
 import { IKlinesParameters, IPriceTrend } from "../interfaces/interfaces";
+import { KlineLimit } from "../utils/enums";
 import { Kline } from "./Kline";
 
 class BinanceTrendBot {
     private readonly axiosRequest: AxiosRequest;
     private readonly TICK_SIZE: number;
     private readonly SYMBOL: string;
-    private readonly floatMargin: number;
     private groupedPrices: {}
     private klinesList: Kline[];
     private lowestPrice: number;
@@ -30,13 +30,12 @@ class BinanceTrendBot {
         this.axiosRequest = new AxiosRequest();
         this.TICK_SIZE = 0.01;
         this.SYMBOL = symbol;
-        this.floatMargin = (0.25 / 100);
         this.groupedPrices = new Object();
         this.axiosRequest.setURI(this.uri);
         this.klinesList = new Array<Kline>();
         this.lowestPrice = this.highestPrice = this.medianPrice = 0;
 
-        setInterval(() => this.fetchData(), (1000 * 60) * 15); // refresh the data every 15 minutes.
+        setInterval(() => this.fetchData(), 60000 * 15); // refresh the data every 15 minutes.
     }
 
     async fetchData() {
@@ -56,28 +55,26 @@ class BinanceTrendBot {
 
     getCurrResistance(): number {
         async function checkValue(self: BinanceTrendBot): Promise<void> {
-            if (!self.currResistance) {
-                await self.setPriceResistance();
-                self.currResistance *= (1 + self.floatMargin);
-                self.currResistance = parseFloat(self.currResistance.toFixed(2));
-            }
+            await self.setPriceResistance();
+            self.currResistance *= KlineLimit.RESISTANCE_MARGIN;
+            self.currResistance = parseFloat(self.currResistance.toFixed(2));
         }
 
-        checkValue(this);
+        if (!this.currResistance)
+            checkValue(this);
 
         return this.currResistance;
     }
 
     getCurrSupport(): number {
         async function checkValue(self: BinanceTrendBot): Promise<void> {
-            if (!self.currSupport) {
-                await self.setPriceSupport();
-                self.currSupport *= (1 - (self.floatMargin * 2.04));
-                self.currSupport = parseFloat(self.currSupport.toFixed(2));
-            }
+            await self.setPriceSupport();
+            self.currSupport *= KlineLimit.SUPPORT_MARGIN;
+            self.currSupport = parseFloat(self.currSupport.toFixed(2));
         }
 
-        checkValue(this);
+        if (!this.currSupport)
+            checkValue(this);
 
         return this.currSupport;
     }
@@ -109,7 +106,7 @@ class BinanceTrendBot {
 
         const orderedKlines = this.klinesList.sort((k1, k2) => k1.highPrice - k2.highPrice);
         this.highestPrice = parseFloat(
-            (orderedKlines[orderedKlines.length - 1].highPrice * .99897).toFixed(2)
+            (orderedKlines[orderedKlines.length - 1].highPrice).toFixed(2)
         );
 
         return this.highestPrice;
@@ -120,7 +117,7 @@ class BinanceTrendBot {
             await this.fetchData();
 
         const orderedKlines = this.klinesList.sort((k1, k2) => k1.lowPrice - k2.lowPrice);
-        this.lowestPrice = parseFloat((orderedKlines[0].lowPrice * 1.00114).toFixed(2));
+        this.lowestPrice = parseFloat((orderedKlines[0].lowPrice).toFixed(2));
 
         return this.lowestPrice;
     }

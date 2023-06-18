@@ -25,7 +25,7 @@ class BingXBot {
 
     constructor(type: Type, endPoint: string) {
         const parameters: IKlinesParameters = {
-            interval: KLineInterval._1MIN, limit: KlineLimit._5H_BY_1MIN
+            interval: KLineInterval._30MIN, limit: KlineLimit.DAY_BY_30MIN
         };
 
         this.ioFile = new IOFile(Enums.CASH_FILENAME, Enums.UTF_8);
@@ -81,15 +81,17 @@ class BingXBot {
         const minimumGain = this.cashedData.price * 1.002;
         const isOverResistance = currPrice > this.currResistance;
         const isOverMinimumGain = currPrice > minimumGain;
-        const isToSell: boolean = this.isBought && isOverResistance;
+        let isToSell: boolean = this.isBought && isOverResistance;
 
-        if (isOverResistance && !isOverMinimumGain) {
+        if (isToSell && !isOverMinimumGain) {
             let msg = "\n=> O preço superou a resistência,";
-            msg += ` mas ainda está abaixo do ganho mínimo: $${minimumGain}.`;
+            msg += `\n=>mas ainda está abaixo do ganho mínimo: $${minimumGain.toFixed(2)}.`;
             console.log(msg);
         }
 
-        return isToSell && isOverMinimumGain;
+        isToSell = isToSell && isOverMinimumGain;
+
+        return isToSell;
     }
 
     private newOrder = async (side: Side, type: Type, tradeData: ITradeData) => {
@@ -107,6 +109,7 @@ class BingXBot {
 
         const uri = this.getURI(newOrderPayload);
         history.unshift(this.cashedData);
+        history.forEach((el: ICashedData) => delete el.isBought);
         const dataToCash: ICashedData = {
             ...newOrderPayload,
             ...tradeData,
@@ -147,7 +150,6 @@ class BingXBot {
             const grossQuantity = parseFloat(responseData.executedQty);
             const grossQuoteOrderQty = parseFloat(responseData.cummulativeQuoteQty);
             const fee = 0.9989
-
             // liquid quantity:
             const liquidQuantity = parseFloat((grossQuantity * fee).toFixed(8));
             // liquid quoteOrderQty:
@@ -160,10 +162,7 @@ class BingXBot {
 
             cashedData.grossQuantity = grossQuantity;
             cashedData.grossQuoteOrderQty = grossQuoteOrderQty;
-
-            cashedData.history.forEach((el: ICashedData) => delete el.isBought);
             this.ioFile.updateFile({ ...cashedData, time: new Date(responseData.transactTime) });
-
             response.data = { ...cashedData };
 
         } else {
