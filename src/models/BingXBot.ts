@@ -136,33 +136,35 @@ class BingXBot {
             console.log("__\nResposta da corretora:");
             console.log(response);
             console.log("__\nValores líquidos:");
-            response = this.calcLiquidValues(side, response);
-            console.log(response);
+            console.log(this.calcLiquidValues(side, response));
         }
 
         console.log("=== *** ===\n");
     }
 
     private calcLiquidValues(side: Side, response: any): any {
-        if ((response.code == 0)) { // The code 0 means success:
+        if (response.code == 0) { // The code 0 means success:
             const cashedData: ICashedData = this.ioFile.readFile();
             const { data: responseData } = response;
+            const fee = 0.9989 // fee: 0,11%
             const grossQuantity = parseFloat(responseData.executedQty);
             const grossQuoteOrderQty = parseFloat(responseData.cummulativeQuoteQty);
-            const fee = 0.9989
-            // liquid quantity:
-            const liquidQuantity = parseFloat((grossQuantity * fee).toFixed(8));
-            // liquid quoteOrderQty:
-            const liquidQuoteOrderQty = parseFloat((grossQuoteOrderQty * fee).toFixed(2));
 
-            // liquid quantity minus 1000sat:
-            cashedData.quantity = liquidQuantity - 0.00001;
-            // liquid quoteOrderQty minus 1.01USD:
-            cashedData.quoteOrderQty = parseFloat((liquidQuoteOrderQty - 1.005).toFixed(2));
+            // cashes the values considering the fee.
+            if (side == Side.SELL) {
+                cashedData.quantity = grossQuantity;
+                cashedData.quoteOrderQty = parseFloat((grossQuoteOrderQty * fee).toFixed(2)) - 0.005;
+            }
+            else {
+                cashedData.quantity = parseFloat((grossQuantity * fee).toFixed(8)) - 0.00000001;
+                cashedData.quoteOrderQty = grossQuoteOrderQty;
+            }
 
-            cashedData.grossQuantity = grossQuantity;
-            cashedData.grossQuoteOrderQty = grossQuoteOrderQty;
+            cashedData.price = parseFloat(responseData.price);
             this.ioFile.updateFile({ ...cashedData, time: new Date(responseData.transactTime) });
+            delete cashedData.isBought;
+            delete cashedData.history;
+
             response.data = { ...cashedData };
 
         } else {
