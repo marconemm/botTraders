@@ -41,5 +41,5 @@ export enum KlineLimit {
     DAY_BY_30MIN = 48,
     DAY_BY_1HOUR = 24,
     RESISTANCE_MARGIN = (1 + (0.001 * .89)),
-    SUPPORT_MARGIN = (1 - (0.001 * 1.8))
+    SUPPORT_MARGIN = (1 - (0.001 * 1.4))
 }

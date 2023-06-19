@@ -25,7 +25,7 @@ class BingXBot {
 
     constructor(type: Type, endPoint: string) {
         const parameters: IKlinesParameters = {
-            interval: KLineInterval._30MIN, limit: KlineLimit.DAY_BY_30MIN
+            interval: KLineInterval._30MIN, limit: KlineLimit.DAY_BY_1HOUR
         };
 
         this.ioFile = new IOFile(Enums.CASH_FILENAME, Enums.UTF_8);
@@ -153,10 +153,12 @@ class BingXBot {
             // cashes the values considering the fee.
             if (side == Side.SELL) {
                 cashedData.quantity = grossQuantity;
-                cashedData.quoteOrderQty = parseFloat((grossQuoteOrderQty * fee).toFixed(2)) - 0.005;
+                cashedData.quoteOrderQty = parseFloat(
+                    ((grossQuoteOrderQty * fee) - 0.005).toFixed(2)
+                );
             }
             else {
-                cashedData.quantity = parseFloat((grossQuantity * fee).toFixed(8)) - 0.00000001;
+                cashedData.quantity = parseFloat(((grossQuantity * fee) - 0.00000001).toFixed(8));
                 cashedData.quoteOrderQty = grossQuoteOrderQty;
             }
 
