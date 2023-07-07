@@ -5,5 +5,3 @@ RUN apk add nano
 RUN apk add bash
 RUN npm install
 COPY . .
-
-CMD ["npm", "run", "conn:bing"]
