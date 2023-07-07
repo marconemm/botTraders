@@ -1,6 +1,5 @@
 # Personal ignore
 package-lock.json
-*-cash.json
 .vscode/
 
 # Logs
@@ -11,6 +10,7 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
+log*
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
