@@ -1,7 +1,9 @@
 .dockerignore
+.gitignore
 Dockerfile
+.git
 .env
-README.md
+*.md
 LICENSE
 
 
