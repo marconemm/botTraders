@@ -5,4 +5,5 @@ COPY . .
 RUN npm install
 RUN apk add nano
 RUN apk add bash
-RUN mv /home/botTraders/.env.example /home/botTraders/.env
+RUN mv .env.example .env
+CMD ["npm", "run", "conn:bing"]
