@@ -1,0 +1,13 @@
+.dockerignore
+Dockerfile
+.env
+README.md
+LICENSE
+
+
+package-lock.json
+.vscode/
+node_modules/*
+logs
+*.log
+log.txt
