@@ -6,7 +6,7 @@ Dockerfile
 *.md
 LICENSE
 
-
+local-cash.json
 package-lock.json
 .vscode/
 node_modules/*
